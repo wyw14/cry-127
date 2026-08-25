@@ -50,7 +50,6 @@ func (c *Coordinator) Release(operationID string, now time.Time) (State, interlo
 	if !ok {
 		return State{}, interlock.Decision{}, errors.New("gas isolation proof not found")
 	}
-	gasProof.BackfillClosing = false
 	decision, err := c.interlocks.DoorRelease(operationID, chamberState, gasProof, now)
 	if err != nil {
 		return State{}, interlock.Decision{}, err

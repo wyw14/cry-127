@@ -64,7 +64,11 @@ func (s *StateStore) Proof(operationID string) (model.GasProof, bool) {
 	for _, isolated := range state.IsolatedLines {
 		priorIsolated = priorIsolated && isolated
 	}
-	return model.GasProof{OperationID: operationID, Revision: state.Revision, ActiveLine: state.ActiveLine, PriorIsolated: priorIsolated, PurgeComplete: state.PurgeComplete, RecordedAt: state.UpdatedAt}, true
+	// BackfillClosing reflects whether this round of gas-path confirmation is
+	// still in progress: as long as a backfill line remains active, the valve
+	// has not finished closing and the gas path is not yet isolated.
+	backfillClosing := state.ActiveLine != ""
+	return model.GasProof{OperationID: operationID, Revision: state.Revision, ActiveLine: state.ActiveLine, PriorIsolated: priorIsolated, PurgeComplete: state.PurgeComplete, BackfillClosing: backfillClosing, RecordedAt: state.UpdatedAt}, true
 }
 
 func (s *StateStore) All() []LineState {

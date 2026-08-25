@@ -23,8 +23,11 @@ func NewIntegration(arbiter *Arbiter) (*Integration, error) {
 func (i *Integration) DoorRelease(operationID string, chamberState chamber.State, gasProof model.GasProof, now time.Time) (Decision, error) {
 	checks := map[string]bool{
 		"chamber pressure is not near atmosphere": chamberState.PressurePa >= 95000 && chamberState.PressurePa <= 105000,
-		"backfill gas path is not isolated":       gasProof.OperationID == operationID,
 		"gas proof belongs to another operation":  gasProof.OperationID == operationID,
+		// The door must stay locked until the current round of gas-path
+		// confirmation has actually finished: the backfill valve must no
+		// longer be closing and every prior line must be isolated.
+		"backfill gas path is not isolated": !gasProof.BackfillClosing && gasProof.PriorIsolated,
 	}
 	return i.arbiter.Decide(operationID, "door.release", checks, now)
 }

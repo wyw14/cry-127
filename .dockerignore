@@ -1,0 +1,14 @@
+.git
+.claude
+.verification-cache
+cases
+case_metadata
+evidence
+private_oracles
+runner
+staging
+workspaces
+data
+*.jsonl
+*.pem
+*.key

@@ -51,14 +51,19 @@ func (c *Coordinator) Acknowledge(operation model.Operation, revision recipe.Rev
 }
 
 func (c *Coordinator) Ready(operationID, revisionID string, zones []string) bool {
+	if revisionID == "" || len(zones) == 0 {
+		return false
+	}
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	for _, zone := range zones {
-		if _, ok := c.acks[operationID+"/"+zone]; !ok {
+		// 到温回执必须归属到当前配方代际：旧配方的 ready 回执不得推进新一轮窗口。
+		ack, ok := c.acks[operationID+"/"+zone]
+		if !ok || ack.RecipeRevision != revisionID {
 			return false
 		}
 	}
-	return len(zones) > 0
+	return true
 }
 
 func (c *Coordinator) SetPower(operationID string, enabled bool) {

@@ -51,7 +51,11 @@ func (m *LeaseManager) Release(lease model.ResourceLease, now time.Time) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	current, ok := m.current[lease.ResourceID]
-	if !ok {
+	// A retired furnace cycle must not release the header that the current
+	// cycle holds: only the current fenced owner may release its own lease.
+	// Without this guard, a late completion message from a previous cycle
+	// frees the header that the active cycle is pressurizing.
+	if !ok || current.ID != lease.ID || current.Fence != lease.Fence || !current.ReleasedAt.IsZero() {
 		return errors.New("lease is not the current fenced owner")
 	}
 	current.ReleasedAt = now.UTC()
